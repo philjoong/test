@@ -1,0 +1,374 @@
+{
+  "skill": {
+    "activationType": {
+      "defined": [
+        "Active",
+        "Passive",
+        "Toggle",
+        "Triggered",
+        "Channeled"
+      ],
+      "seen": [
+        "Active"
+      ],
+      "missing": [
+        "Passive",
+        "Toggle",
+        "Triggered",
+        "Channeled"
+      ]
+    },
+    "targetingMode": {
+      "defined": [
+        "Targeted",
+        "NonTargeted",
+        "SelfCast",
+        "GroundTargeted",
+        "DirectionSkillshot",
+        "AutoTarget"
+      ],
+      "seen": [
+        "Targeted"
+      ],
+      "missing": [
+        "NonTargeted",
+        "SelfCast",
+        "GroundTargeted",
+        "DirectionSkillshot",
+        "AutoTarget"
+      ]
+    },
+    "areaType": {
+      "defined": [
+        "SingleTarget",
+        "MultiTarget",
+        "AreaOfEffect",
+        "Line",
+        "Chain",
+        "Global"
+      ],
+      "seen": [
+        "SingleTarget"
+      ],
+      "missing": [
+        "MultiTarget",
+        "AreaOfEffect",
+        "Line",
+        "Chain",
+        "Global"
+      ]
+    },
+    "targetFaction": {
+      "defined": [
+        "Enemy",
+        "Ally",
+        "Self",
+        "Neutral",
+        "Any",
+        "None"
+      ],
+      "seen": [
+        "Enemy"
+      ],
+      "missing": [
+        "Ally",
+        "Self",
+        "Neutral",
+        "Any",
+        "None"
+      ]
+    },
+    "effectCategory": {
+      "defined": [
+        "Damage",
+        "Heal",
+        "Buff",
+        "Debuff",
+        "CrowdControl",
+        "Shield",
+        "Mobility",
+        "Summon",
+        "Resource",
+        "Utility"
+      ],
+      "seen": [
+        "Damage",
+        "Debuff"
+      ],
+      "missing": [
+        "Heal",
+        "Buff",
+        "CrowdControl",
+        "Shield",
+        "Mobility",
+        "Summon",
+        "Resource",
+        "Utility"
+      ]
+    },
+    "damageType": {
+      "defined": [
+        "Physical",
+        "Magical",
+        "True",
+        "Fire",
+        "Ice",
+        "Lightning",
+        "Poison",
+        "Holy",
+        "Shadow",
+        "None"
+      ],
+      "seen": [
+        "Fire"
+      ],
+      "missing": [
+        "Physical",
+        "Magical",
+        "True",
+        "Ice",
+        "Lightning",
+        "Poison",
+        "Holy",
+        "Shadow",
+        "None"
+      ]
+    },
+    "controlType": {
+      "defined": [
+        "Stun",
+        "Silence",
+        "Root",
+        "Slow",
+        "Knockback",
+        "Pull",
+        "Airborne",
+        "Fear",
+        "Sleep",
+        "Charm",
+        "None"
+      ],
+      "seen": [
+        "None"
+      ],
+      "missing": [
+        "Stun",
+        "Silence",
+        "Root",
+        "Slow",
+        "Knockback",
+        "Pull",
+        "Airborne",
+        "Fear",
+        "Sleep",
+        "Charm"
+      ]
+    },
+    "durationType": {
+      "defined": [
+        "Instant",
+        "OverTime",
+        "Permanent",
+        "UntilDispelled",
+        "UntilDeath"
+      ],
+      "seen": [
+        "OverTime"
+      ],
+      "missing": [
+        "Instant",
+        "Permanent",
+        "UntilDispelled",
+        "UntilDeath"
+      ]
+    },
+    "interruptibleState": {
+      "defined": [
+        "Interruptible",
+        "Uninterruptible",
+        "CancelOnMove"
+      ],
+      "seen": [
+        "Interruptible"
+      ],
+      "missing": [
+        "Uninterruptible",
+        "CancelOnMove"
+      ]
+    },
+    "rangeCategory": {
+      "defined": [
+        "Melee",
+        "Short",
+        "Medium",
+        "Long",
+        "Extreme",
+        "Infinite"
+      ],
+      "seen": [
+        "Medium"
+      ],
+      "missing": [
+        "Melee",
+        "Short",
+        "Long",
+        "Extreme",
+        "Infinite"
+      ]
+    },
+    "resourceType": {
+      "defined": [
+        "Mana",
+        "Stamina",
+        "Rage",
+        "Energy",
+        "Health",
+        "Charges",
+        "Cooldown",
+        "Free"
+      ],
+      "seen": [
+        "Mana"
+      ],
+      "missing": [
+        "Stamina",
+        "Rage",
+        "Energy",
+        "Health",
+        "Charges",
+        "Cooldown",
+        "Free"
+      ]
+    }
+  },
+  "state": {
+    "stateCategory": {
+      "defined": [
+        "Buff",
+        "Debuff",
+        "CrowdControl",
+        "DoT",
+        "HoT",
+        "Shield",
+        "Aura",
+        "Transformation",
+        "Marker",
+        "Environmental"
+      ],
+      "seen": [],
+      "missing": [
+        "Buff",
+        "Debuff",
+        "CrowdControl",
+        "DoT",
+        "HoT",
+        "Shield",
+        "Aura",
+        "Transformation",
+        "Marker",
+        "Environmental"
+      ]
+    },
+    "polarity": {
+      "defined": [
+        "Positive",
+        "Negative",
+        "Neutral"
+      ],
+      "seen": [
+        "Negative"
+      ],
+      "missing": [
+        "Positive",
+        "Neutral"
+      ]
+    },
+    "dispelType": {
+      "defined": [
+        "Magic",
+        "Physical",
+        "Poison",
+        "Curse",
+        "Disease",
+        "Enrage",
+        "Undispellable"
+      ],
+      "seen": [
+        "Magic"
+      ],
+      "missing": [
+        "Physical",
+        "Poison",
+        "Curse",
+        "Disease",
+        "Enrage",
+        "Undispellable"
+      ]
+    },
+    "stackingMode": {
+      "defined": [
+        "NotStackable",
+        "RefreshDuration",
+        "AddStack",
+        "Independent",
+        "HighestWins"
+      ],
+      "seen": [
+        "AddStack",
+        "NotStackable"
+      ],
+      "missing": [
+        "RefreshDuration",
+        "Independent",
+        "HighestWins"
+      ]
+    },
+    "tickType": {
+      "defined": [
+        "NoTick",
+        "Periodic",
+        "OnEvent",
+        "Once"
+      ],
+      "seen": [
+        "NoTick",
+        "Periodic"
+      ],
+      "missing": [
+        "OnEvent",
+        "Once"
+      ]
+    },
+    "visibilityType": {
+      "defined": [
+        "Visible",
+        "Hidden",
+        "OwnerOnly",
+        "AllyOnly"
+      ],
+      "seen": [
+        "Visible"
+      ],
+      "missing": [
+        "Hidden",
+        "OwnerOnly",
+        "AllyOnly"
+      ]
+    },
+    "appliesToAxis": {
+      "defined": [
+        "Player",
+        "Monster",
+        "Both",
+        "Environment"
+      ],
+      "seen": [],
+      "missing": [
+        "Player",
+        "Monster",
+        "Both",
+        "Environment"
+      ]
+    }
+  }
+}

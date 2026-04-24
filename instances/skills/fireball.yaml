@@ -1,0 +1,70 @@
+skill:
+  id: skill.fireball
+  name: "Fireball"
+  version: "1.0.0"
+
+  activationType: Active
+  targetingMode: Targeted
+  areaType: SingleTarget
+  targetFaction: Enemy
+  effectCategory: [Damage, Debuff]
+  damageType: Fire
+  controlType: None
+  durationType: OverTime
+  interruptibleState: Interruptible
+  rangeCategory: Medium
+  resourceType: Mana
+
+  cooldown: 6
+  castTime: 1.2
+  channelDuration: 0
+  range: 18
+  areaRadius: 0
+  resourceCost: 40
+  chargesMax: 1
+  chargeRegenTime: 0
+
+  archetype: SingleTargetActive
+
+  restrictions:
+    - condition: InSafeZone
+      allowed: false
+      reason: SafeZoneRestriction
+      priority: 1
+    - condition: Silenced
+      allowed: false
+      reason: CasterSilenced
+      priority: 2
+    - condition: CooldownNotReady
+      allowed: false
+      reason: OnCooldown
+      priority: 3
+    - condition: ResourceInsufficient
+      allowed: false
+      reason: NotEnoughMana
+      priority: 4
+
+  effects:
+    - target: PrimaryTarget
+      operation: Subtract
+      attribute: HP
+      value: 120
+      duration: 0
+    - target: PrimaryTarget
+      operation: AddState
+      attribute: State
+      value: state.burn
+      duration: 5
+      stackable: true
+      stackMax: 3
+      dispellable: true
+
+  interactions:
+    - type: AmplifiedBy
+      withTag: TargetHasState.Oiled
+      result:
+        damageMultiplier: 1.5
+    - type: NullifiedBy
+      withTag: TargetHasState.FireImmune
+      result:
+        blocked: true

@@ -1,0 +1,284 @@
+# Intent Routing — machine-parseable core
+# 인간용 설명·예시·판단 근거는 wiki-intent-routing.md 참조.
+# 이 파일은 AI 가 O(1) 로 "intent → entry points + tool calls" 를 뽑아낼 수 있도록 설계됨.
+#
+# v2 변경점:
+#   - tool: <wiki-tool CLI 인수 리스트> 필드 추가 — 코드로 답 가능한 부분은 먼저 실행
+#   - query_templates → narrative_queries (AI 서술형 추론이 필요한 것만)
+#   - budget.prefer_tool_over_read — tool 결과로 답 나오면 doc 읽기 스킵
+#   - tool_capabilities 카탈로그 — CLI 가 무엇을 할 수 있는지 AI 에게 고지
+
+version: "2.0.0"
+
+# ─────────────────────────────────────────────────────────
+# 0. 실행 환경 (AI 가 호출할 도구)
+# ─────────────────────────────────────────────────────────
+tool_runner:
+  command: "python wiki-tool.py"
+  cwd: "<repo root>"
+  output: stdout                  # 모든 서브커맨드는 stdout 에 결과 기록
+  index_dir: "index/"             # build-index 산출물 위치 (JSON)
+
+tool_capabilities:
+  # 각 capability 는 (서브커맨드, 입력, 출력, 답할 수 있는 질문 유형) 로 기술한다.
+  # AI 는 질문 → capability 매칭 → tool 인수 구성 → 실행 순서로 움직인다.
+
+  listByAxis:
+    subcommand: query
+    usage: "query <entityPlural> -f <field>=<value> [-f ...]"
+    returns: "stdout: id per line"
+    answers:
+      - "damageType=Fire 인 모든 스킬은?"
+      - "category=DoT 인 모든 State 는?"
+      - "targetFaction=Ally AND effectCategory=Damage 모순 조합"
+
+  listWithEmptyField:
+    subcommand: query
+    usage: "query <entityPlural> -e <listField>"
+    returns: "stdout: id per line"
+    answers:
+      - "interactions 가 비어있는 스킬 (조합 설계 공백)"
+      - "restrictions 가 비어있는 스킬 (제약 누락)"
+
+  listMissingRestriction:
+    subcommand: query
+    usage: "query <entityPlural> -f <axisField>=<value> -m <listField>.<subField>=<value>"
+    returns: "stdout: id per line"
+    answers:
+      - "effectCategory=Damage 인데 restrictions 에 InSafeZone 이 없는 스킬"
+      - "activationType=Channeled 인데 restrictions 에 Silenced 가 없는 스킬"
+
+  archetypeDistribution:
+    subcommand: build-index
+    usage: "build-index (reads index/by-archetype.json after)"
+    returns: "file: index/by-archetype.json  {archetype: [ids]}"
+    answers:
+      - "archetype 별 스킬 수 / 특정 원형 결손 탐지"
+
+  reverseLookup:
+    subcommand: build-index
+    usage: "build-index (reads index/hubs.json after)"
+    returns: "file: index/hubs.json  {targetId: [{from, fromEntity, field}]}"
+    answers:
+      - "state.burn 을 만들어내는 모든 Skill/Item/Quest"
+      - "zone.X 를 참조하는 모든 엔티티"
+      - "허브 노드의 incoming 전수"
+
+  dangingReferences:
+    subcommand: check-refs
+    usage: "check-refs"
+    returns: "file: index/ref-integrity.json + exit 1 if any"
+    answers:
+      - "유령 참조 탐지 (to 가 실존하지 않는 edge)"
+
+  invariantViolations:
+    subcommand: check-invariants
+    usage: "check-invariants"
+    returns: "file: index/invariant-violations.json + exit 1 if any"
+    answers:
+      - "effectCategory=Damage 이면 damageType≠None 위반"
+      - "Channeled 이면 channelDuration>0 위반"
+      - "enum 값이 스키마 밖"
+
+  coverageGaps:
+    subcommand: check-coverage
+    usage: "check-coverage"
+    returns: "file: index/coverage.json  {entity: {axis: {defined, seen, missing}}}"
+    answers:
+      - "각 축의 enum 값 중 실제 인스턴스가 0개인 값"
+
+  listByArchetype:
+    subcommand: query
+    usage: "query skills -f archetype=<Archetype>"
+    returns: "stdout: id per line"
+    answers:
+      - "AoEActive 로 분류된 스킬"
+
+# ─────────────────────────────────────────────────────────
+# 1. Intent 분류 패턴
+# ─────────────────────────────────────────────────────────
+intents:
+
+  SingleRuleCheck:
+    classifier_patterns: ["가능", "되나", "허용", "금지", "가능한가", "할 수 있"]
+    entry_points:
+      primary:
+        - { doc: wiki-entity-player.md,      section: "§6 Action Rules" }
+        - { doc: wiki-entity-monster.md,     section: "§6 BehaviorRule" }
+        - { doc: wiki-skill-schema.md,       section: "§3 Restrictions" }
+        - { doc: wiki-entity-interaction.md, section: "§3 Preconditions" }
+      secondary:
+        - { doc: wiki-entity-zone.md,        section: "§4 ZoneRestriction" }
+        - { doc: wiki-entity-state.md,       section: "§2 State properties" }
+    tool:
+      # 해당 스킬의 restrictions 전체를 본 뒤, 조건 필드로 매칭되는 것 찾기.
+      # AI 는 <id> / <condition> 을 질문에서 추출해 치환한다.
+      - { capability: listByAxis,        args: "query skills -f id=<skillId>" }
+      - { capability: invariantViolations, args: "check-invariants" }
+    walks: [PredicateClosure]
+    narrative_queries:
+      - "restriction.priority 오름차순으로 매칭되는 첫 번째 allowed=false 추출"
+    stop_when: "first matching Restriction.allowed=false (priority asc)"
+
+  CoverageGap:
+    classifier_patterns: ["테스트 안", "커버리지", "공백", "빠진", "누락된 조합"]
+    entry_points:
+      primary:
+        - { doc: "*", section: "§1 Classification Axes" }
+      secondary:
+        - { doc: wiki-relations.md, section: "§4 핵심 허브" }
+    tool:
+      - { capability: coverageGaps,          args: "check-coverage" }
+      - { capability: archetypeDistribution, args: "build-index" }
+      - { capability: listWithEmptyField,    args: "query skills -e interactions" }
+      - { capability: listMissingRestriction, args: "query skills -f effectCategory=Damage -m restrictions.condition=InSafeZone" }
+    walks: []
+    narrative_queries:
+      - "축 데카르트곱 - 실제 인스턴스 집합 = 공백"
+    stop_when: "coverage.json + missing restriction lists collected"
+
+  SpecAmbiguity:
+    classifier_patterns: ["정의 없음", "애매", "모호", "규칙 누락", "정의 있나", "명시 안"]
+    entry_points:
+      primary:
+        - { doc: "*", section: "§8-9 Invariants" }
+      secondary:
+        - { doc: "*", section: "§5 Interactions" }
+    tool:
+      - { capability: invariantViolations, args: "check-invariants" }
+      - { capability: dangingReferences,   args: "check-refs" }
+      - { capability: listWithEmptyField,  args: "query skills -e interactions" }
+    walks: []
+    narrative_queries:
+      - "tool 결과로 덮이지 않는 의미적 모호함 (자연어 해석 필요) 추출"
+    stop_when: "invariant/ref violations + semantic ambiguity notes collected"
+
+  IntentDrift:
+    classifier_patterns: ["의도", "변질", "원래 목적", "컨셉 이탈", "원형"]
+    entry_points:
+      primary:
+        - { doc: wiki-skill-schema.md, section: "§6 Archetypes" }
+      secondary:
+        - { doc: "*", section: "§1 Classification Axes" }
+        - { doc: wiki-relations.md, section: "§5-3 ProductionChain" }
+    tool:
+      - { capability: archetypeDistribution, args: "build-index" }
+      - { capability: listByArchetype,       args: "query skills -f archetype=<ArchetypeName>" }
+      - { capability: listByAxis,            args: "query skills -f targetFaction=Ally -f effectCategory=Damage" }
+    walks: [ProductionChain, ChangeImpact]
+    walk_params:
+      ChangeImpact: { depth: 1 }
+    narrative_queries:
+      - "Archetype 기대 축값 vs 실제 축값 diff — 이탈 방향 서술"
+    stop_when: "archetype deviation report complete"
+
+  BalanceRisk:
+    classifier_patterns: ["너무 센", "악용", "OP", "밸런스", "메타", "과도하게"]
+    entry_points:
+      primary:
+        - { doc: wiki-skill-schema.md, section: "§6 Archetypes" }
+        - { doc: wiki-skill-schema.md, section: "§5 Interactions" }
+      secondary:
+        - { doc: wiki-entity-state.md,   section: "§7 StateInteraction" }
+        - { doc: wiki-entity-monster.md, section: "§3 Resistances/Immunities" }
+        - { doc: wiki-entity-zone.md,    section: "§5 ZoneModifier" }
+    tool:
+      - { capability: listByAxis,         args: "query skills -f areaType=Global -f targetFaction=Enemy" }
+      - { capability: listByAxis,         args: "query skills -f durationType=UntilDispelled -f dispelType=Undispellable" }
+      - { capability: listByAxis,         args: "query skills -f targetFaction=Ally -f effectCategory=Damage" }
+      - { capability: reverseLookup,      args: "build-index" }
+    walks: [ProductionChain, ChangeImpact]
+    narrative_queries:
+      - "tool 결과 목록에서 실제 연계 시나리오(Oiled→Burn→...) 생성"
+    stop_when: "risky candidate list + scenario narrative generated"
+
+  BugRootCause:
+    classifier_patterns: ["왜 발생", "재현", "언제 터지", "원인", "버그", "크래시"]
+    entry_points:
+      primary:
+        - { doc: "*",                    section: "§3 Restrictions" }
+        - { doc: "*",                    section: "§4 Effects" }
+        - { doc: wiki-entity-state.md,   section: "§4 StateTrigger" }
+        - { doc: wiki-entity-state.md,   section: "§5 RemoveCondition" }
+      secondary:
+        - { doc: wiki-relations.md,      section: "§5-2 PredicateClosure" }
+        - { doc: wiki-entity-session.md, section: "§6 Instance" }
+        - { doc: wiki-entity-interaction.md, section: "§8 SideEffect" }
+    tool:
+      - { capability: invariantViolations, args: "check-invariants" }
+      - { capability: reverseLookup,       args: "build-index" }
+      - { capability: listByAxis,          args: "query skills -f id=<suspectSkillId>" }
+    walks: [PredicateClosure, ProductionChain]
+    narrative_queries:
+      - "state trigger 타이밍 + restriction 체크 순서에서 발생 가능한 축 조합 3~5개 가설"
+    stop_when: "3~5 axis combinations reproducing the bug identified"
+
+  ChangeImpact:
+    classifier_patterns: ["바꾸면", "영향", "회귀", "변경", "수정하면", "바뀌면"]
+    entry_points:
+      primary:
+        - { doc: wiki-relations.md, section: "§3 Edge 정의" }
+      secondary:
+        - { doc: wiki-relations.md, section: "§4 핵심 허브" }
+        - { doc: "*",               section: "§8-9 Invariants" }
+    tool:
+      - { capability: reverseLookup,       args: "build-index" }
+      - { capability: invariantViolations, args: "check-invariants" }
+    walks: [ChangeImpact]
+    walk_params:
+      ChangeImpact: { depth: 2 }
+    narrative_queries:
+      - "hubs.json 의 target=<변경 id> incoming 에서 영향받는 엔티티 전수"
+      - "변경 후 invariant 위반 여부는 check-invariants 재실행으로 확인"
+    stop_when: "impact list + invariant result + test targets complete"
+
+# ─────────────────────────────────────────────────────────
+# 2. 분류 실패 시 기본값
+# ─────────────────────────────────────────────────────────
+default_intent: SingleRuleCheck
+
+# ─────────────────────────────────────────────────────────
+# 3. 탐색 예산 / 정책
+# ─────────────────────────────────────────────────────────
+budget:
+  max_docs_to_read: 4
+  max_walk_depth: 2
+  max_narrative_queries: 3
+  prefer_tool_over_read: true     # tool 결과로 답 나오면 primary/secondary 읽기 스킵
+
+policy:
+  order:
+    - step1_classifyIntent
+    - step2_runTools            # 해당 intent 의 tool[] 전부 실행 (저렴)
+    - step3_readIfNeeded        # tool 결과 불충분 시만 primary/secondary 읽기
+    - step4_walkIfNeeded        # relations 그래프 걷기 필요 시
+    - step5_narrativeAnswer     # AI 가 의미적 판단 필요한 부분만
+    - step6_fallbackSearch      # 최후
+  tool_result_contract:
+    exit_zero_means_no_violations: true
+    empty_stdout_means_no_matches: true
+    structured_output_is_json:
+      - index/by-axis.json
+      - index/by-archetype.json
+      - index/hubs.json
+      - index/coverage.json
+      - index/ref-integrity.json
+      - index/invariant-violations.json
+
+# ─────────────────────────────────────────────────────────
+# 4. Fallback
+# ─────────────────────────────────────────────────────────
+fallback:
+  trigger:
+    - "no section matched in step3"
+    - "tool returned empty but question expects non-empty"
+    - "intent classifier confidence low"
+    - "question contains core term not in any schema axis"
+  action: semantic_search_then_log_as_schema_gap
+  must_log_as: "schema-gap-candidate"
+  must_not: ["cite as equal to schema", "auto-merge into schema"]
+
+# ─────────────────────────────────────────────────────────
+# 5. Walk 정의는 wiki-relations.md §5 에 있음
+# ─────────────────────────────────────────────────────────
+walk_definitions_ref: "wiki-relations.md §5"

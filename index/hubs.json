@@ -1,0 +1,21 @@
+{
+  "state.burn": [
+    {
+      "from": "skill.fireball",
+      "fromEntity": "skill",
+      "field": "effects[1].value"
+    },
+    {
+      "from": "state.freeze",
+      "fromEntity": "state",
+      "field": "interactions[0].withStateId"
+    }
+  ],
+  "state.freeze": [
+    {
+      "from": "state.burn",
+      "fromEntity": "state",
+      "field": "interactions[0].withStateId"
+    }
+  ]
+}

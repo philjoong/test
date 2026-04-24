@@ -1,0 +1,98 @@
+{
+  "skill": {
+    "activationType": {
+      "Active": [
+        "skill.fireball"
+      ]
+    },
+    "targetingMode": {
+      "Targeted": [
+        "skill.fireball"
+      ]
+    },
+    "areaType": {
+      "SingleTarget": [
+        "skill.fireball"
+      ]
+    },
+    "targetFaction": {
+      "Enemy": [
+        "skill.fireball"
+      ]
+    },
+    "effectCategory": {
+      "Damage": [
+        "skill.fireball"
+      ],
+      "Debuff": [
+        "skill.fireball"
+      ]
+    },
+    "damageType": {
+      "Fire": [
+        "skill.fireball"
+      ]
+    },
+    "controlType": {
+      "None": [
+        "skill.fireball"
+      ]
+    },
+    "durationType": {
+      "OverTime": [
+        "skill.fireball"
+      ]
+    },
+    "interruptibleState": {
+      "Interruptible": [
+        "skill.fireball"
+      ]
+    },
+    "rangeCategory": {
+      "Medium": [
+        "skill.fireball"
+      ]
+    },
+    "resourceType": {
+      "Mana": [
+        "skill.fireball"
+      ]
+    }
+  },
+  "state": {
+    "polarity": {
+      "Negative": [
+        "state.burn",
+        "state.freeze"
+      ]
+    },
+    "dispelType": {
+      "Magic": [
+        "state.burn",
+        "state.freeze"
+      ]
+    },
+    "stackingMode": {
+      "AddStack": [
+        "state.burn"
+      ],
+      "NotStackable": [
+        "state.freeze"
+      ]
+    },
+    "tickType": {
+      "Periodic": [
+        "state.burn"
+      ],
+      "NoTick": [
+        "state.freeze"
+      ]
+    },
+    "visibilityType": {
+      "Visible": [
+        "state.burn",
+        "state.freeze"
+      ]
+    }
+  }
+}

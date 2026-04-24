@@ -1,0 +1,50 @@
+state:
+  id: state.freeze
+  name: "Freeze"
+  version: "1.0.0"
+
+  category: CrowdControl
+  polarity: Negative
+  dispelType: Magic
+  stackingMode: NotStackable
+  tickType: NoTick
+  visibilityType: Visible
+  appliesTo: Both
+
+  iconId: "icon.state.freeze"
+  description: "Target is frozen solid - cannot act."
+
+  durationType: OverTime
+  baseDuration: 3
+  maxDuration: 6
+
+  stackMax: 1
+  stackDecayMode: AllAtOnce
+
+  effects: []
+  tickInterval: 0
+  tickEffects: []
+
+  triggerOn: []
+  immunitiesGranted: []
+
+  removeOn:
+    - OnExpire
+    - OnDispel
+    - OnDamageTaken
+    - OnDeath
+
+  tags:
+    - Element.Ice
+    - Origin.Skill
+    - CC.Break
+
+  interactions:
+    - type: Cancels
+      withStateId: state.burn
+      result:
+        blocked: false
+
+  priority: 20
+  isHarmful: true
+  isPurgeableByPlayer: false

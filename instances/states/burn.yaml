@@ -1,0 +1,61 @@
+state:
+  id: state.burn
+  name: "Burn"
+  version: "1.0.0"
+
+  category: DoT
+  polarity: Negative
+  dispelType: Magic
+  stackingMode: AddStack
+  tickType: Periodic
+  visibilityType: Visible
+  appliesTo: Both
+
+  iconId: "icon.state.burn"
+  description: "Fire damage over time."
+
+  durationType: OverTime
+  baseDuration: 5
+  maxDuration: 10
+
+  stackMax: 3
+  stackDecayMode: AllAtOnce
+
+  effects: []
+
+  tickInterval: 1
+  tickEffects:
+    - target: PrimaryTarget
+      operation: Subtract
+      attribute: HP
+      value: 40
+      duration: 0
+
+  triggerOn: []
+
+  immunitiesGranted: []
+
+  removeOn:
+    - OnExpire
+    - OnDispel
+    - OnDeath
+
+  tags:
+    - Element.Fire
+    - Origin.Skill
+    - Group.Bleed
+    - Purgeable
+
+  interactions:
+    - type: Cancels
+      withStateId: state.freeze
+      result:
+        blocked: false
+    - type: Prevents
+      withTag: Element.Ice
+      result:
+        blocked: true
+
+  priority: 10
+  isHarmful: true
+  isPurgeableByPlayer: false
